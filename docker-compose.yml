@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   rabbitmq:
     image: rabbitmq:4.2
@@ -20,17 +18,19 @@ services:
       timeout: 5s
       retries: 5
 
-  python:
-    image:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     container_name: mkk
     restart: unless-stopped
     volumes:
-      - .:/app
-    working_dir: /app
+      - ./src/mkk:/usr/src/app
+    ports:
+      - "8000:8000"
     depends_on:
       rabbitmq:
         condition: service_healthy
-    command: [ "tail", "-f", "/dev/null" ]
 
 volumes:
   rabbitmq_data:
