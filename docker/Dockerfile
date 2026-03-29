@@ -4,8 +4,8 @@ WORKDIR /usr/src
 
 COPY . .
 
-WORKDIR /usr/src
+# I'm way too lazy to create a separate Dockerfile for tests
+#  or write multistage image
+RUN pip install -e .[test]
 
-RUN pip install -e .
-
-CMD [ "fastapi", "run", "mkk/main.py"]
+CMD ["fastapi", "run", "src/mkk/main.py"]

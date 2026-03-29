@@ -42,10 +42,25 @@ services:
       dockerfile: docker/Dockerfile
     container_name: mkk
     restart: unless-stopped
+    command: ["fastapi", "run", "src/mkk/main.py"]
     volumes:
-      - ./src:/usr/src
+      - ./:/usr/src
     ports:
       - "8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+
+  test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mkk_test
+    command: ["pytest", "tests"]
+    volumes:
+      - ./:/usr/src
     depends_on:
       rabbitmq:
         condition: service_healthy

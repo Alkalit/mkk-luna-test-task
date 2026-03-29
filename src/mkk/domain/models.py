@@ -23,7 +23,7 @@ class JSON(dict):
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Payment:
     id: int
     amount: Decimal
