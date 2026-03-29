@@ -1,16 +1,20 @@
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID
 
 
-class Currency(Enum):
-    pass
+class Currency(StrEnum):
+    RUB = "RUB"
+    USD = "USD"
+    EUR = "EUR"
 
 
-class Status(Enum):
-    pass
+class Status(StrEnum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
 
 
 # JSON can be not only a js-object, but also an array and etc
