@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[project]
+name = "mkk"
+version = "1.0"
+description = "Test task for MKK Luna"
+requires-python = ">=3.14"
+dependencies = [
+    "pydantic==2.12.*",
+    "fastapi==0.135.*",
+    "fastapi-cli==0.0.24",
+    "psycopg[binary]==3.3.3",
+    "SQLAlchemy==2.0.*",
+    "alembic==1.18.*",
+]
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio==0.21.1",
+]

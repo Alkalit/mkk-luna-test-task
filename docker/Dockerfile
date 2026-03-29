@@ -1,10 +1,11 @@
 FROM python:3.14-slim
 
-WORKDIR /usr/src/app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /usr/src
 
 COPY . .
 
-CMD [ "fastapi", "dev" ]
+WORKDIR /usr/src
+
+RUN pip install -e .
+
+CMD [ "fastapi", "run", "mkk/main.py"]

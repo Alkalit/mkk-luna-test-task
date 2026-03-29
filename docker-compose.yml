@@ -43,7 +43,7 @@ services:
     container_name: mkk
     restart: unless-stopped
     volumes:
-      - ./src/mkk:/usr/src/app
+      - ./src:/usr/src
     ports:
       - "8000:8000"
     depends_on:
