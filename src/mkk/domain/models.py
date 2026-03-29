@@ -34,4 +34,4 @@ class Payment:
     url: str
     meta: JSON
     created_at: datetime
-    updated_at: datetime
+    processed_at: datetime
