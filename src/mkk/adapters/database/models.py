@@ -1,12 +1,12 @@
 from sqlalchemy import Column, Integer, DateTime, String, Numeric, Enum, UUID
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import JSONB
-from mkk.domain.models import Currency, Status
+from sqlalchemy.ext.declarative import declarative_base
 
+from mkk.domain.models import Currency, Status
 
 Base = declarative_base()
 
-# TODO not null
+
 class Payment(Base):
     __tablename__ = "payments"
 
