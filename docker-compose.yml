@@ -67,6 +67,20 @@ services:
       postgresql:
         condition: service_healthy
 
+  migrations:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mkk_migrations
+    command: ["alembic", "upgrade", "head"]
+    volumes:
+      - ./:/usr/src
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+
 volumes:
   rabbitmq_data:
   postgres_data:
