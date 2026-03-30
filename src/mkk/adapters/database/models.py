@@ -1,3 +1,4 @@
+from sqlalchemy import CheckConstraint
 from sqlalchemy import Column, Integer, DateTime, String, Numeric, Enum, UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,10 +12,12 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(Integer, primary_key=True, index=True)
-    # TODO constrait
-    amount = Column(Numeric, nullable=False)
+    amount = Column(
+        Numeric,
+        CheckConstraint("currency > 0", name="positive_only"),
+        nullable=False
+    )
     currency = Column("currency", Enum(Currency), nullable=False)
-    # TODO constrait
     description = Column(String, nullable=False)
     status = Column("status", Enum(Status), nullable=False)
     idempotency_key = Column(UUID, nullable=False)
