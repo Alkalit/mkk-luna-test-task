@@ -36,50 +36,35 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
+  base: &base
     build:
       context: .
       dockerfile: docker/Dockerfile
+    volumes:
+      - ./:/usr/src
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+
+  app:
+    <<: *base
     container_name: mkk
     restart: unless-stopped
     command: ["fastapi", "run", "src/mkk/main.py"]
-    volumes:
-      - ./:/usr/src
     ports:
       - "8000:8000"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgresql:
-        condition: service_healthy
 
   test:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    <<: *base
     container_name: mkk_test
     command: ["pytest", "tests"]
-    volumes:
-      - ./:/usr/src
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgresql:
-        condition: service_healthy
 
   migrations:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    <<: *base
     container_name: mkk_migrations
     command: ["alembic", "upgrade", "head"]
-    volumes:
-      - ./:/usr/src
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgresql:
-        condition: service_healthy
 
 volumes:
   rabbitmq_data:
