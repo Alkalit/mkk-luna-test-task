@@ -11,8 +11,10 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(Integer, primary_key=True, index=True)
+    # TODO constrait
     amount = Column(Numeric, nullable=False)
     currency = Column("currency", Enum(Currency), nullable=False)
+    # TODO constrait
     description = Column(String, nullable=False)
     status = Column("status", Enum(Status), nullable=False)
     idempotency_key = Column(UUID, nullable=False)
