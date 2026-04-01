@@ -1,7 +1,10 @@
+from typing import Annotated
+from decimal import Decimal
+from pydantic import BaseModel, Field, Json, WebsocketUrl, JsonValue
 from datetime import datetime as dt
 from uuid import uuid1
 
-from fastapi import APIRouter, Response, status, Depends
+from fastapi import APIRouter, Response, status, Depends, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mkk.adapters.database.models import Payment, Currency, Status
@@ -9,26 +12,43 @@ from mkk.adapters.database.models import Payment, Currency, Status
 payment_router = APIRouter()
 
 
+class PaymentCreation(BaseModel):
+    amount: Decimal
+    currency: Currency
+    description: str = 'Test descr'
+    meta: JsonValue
+    url: WebsocketUrl
+
+
 @payment_router.post("/api/v1/payments")
 async def payments(
         response: Response,
-        session: AsyncSession = Depends(AsyncSession),
+        payment_data: PaymentCreation,
+        session: AsyncSession = Depends(),
 ):
-    print('came here!!!!!!!!!!!!')
+
     response.status_code = status.HTTP_202_ACCEPTED
+    created_at = dt.now()
     payment = Payment(
-        amount=1,
-        currency=Currency.RUB,
-        description='text',
-        status=Status.SUCCEEDED,
-        url='test',
-        meta={"spam": "ham"},
-        created_at=dt.now(),
-        idempotency_key=uuid1(),
+        amount=payment_data.amount,
+        currency=payment_data.currency,
+        description=payment_data.description,
+        status=Status.PENDING,
+        url=str(payment_data.url), # NOQA
+        meta=payment_data.meta,
+        created_at=created_at,
+        idempotency_key=uuid1(),  # TODO
     )
     session.add(payment)
+    await session.flush()
+    data = {
+        "payment_id": payment.id,
+        "status": payment.status,
+        "created_at": created_at,
+    }
+
     await session.commit()
-    return {"payment_id": "1234", "status": Status.SUCCEEDED, "created_at": "1234"}
+    return data
 
 
 @payment_router.get("/hello/{name}")
