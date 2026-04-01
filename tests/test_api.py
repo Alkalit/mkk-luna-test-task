@@ -22,6 +22,7 @@ class TestPaymentsCreation:
                 meta=dict(spam=1, ham=2, eggs=3),
                 url='wss://domain/do-stuff',
             ),
+            headers={"Idempotency-Key": "deadbeef-2e15-11f1-b0bb-02420a0a0102"}
         )
 
         payment_id = response.json()["payment_id"]

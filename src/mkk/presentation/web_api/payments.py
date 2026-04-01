@@ -1,11 +1,10 @@
 from datetime import datetime as dt
-from uuid import uuid1
 
-from fastapi import APIRouter, Response, status, Depends
+from fastapi import APIRouter, Response, status, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mkk.adapters.database.models import Payment, Status
-from mkk.presentation.web_api.models import PaymentCreation
+from mkk.presentation.web_api.models import PaymentCreation, PaymentCreationHeader
 
 payment_router = APIRouter()
 
@@ -15,6 +14,7 @@ async def payments(
         response: Response,
         payment_data: PaymentCreation,
         session: AsyncSession = Depends(),
+        headers: PaymentCreationHeader = Header(),
 ):
 
     response.status_code = status.HTTP_202_ACCEPTED
@@ -27,7 +27,7 @@ async def payments(
         url=str(payment_data.url),
         meta=payment_data.meta,
         created_at=created_at,
-        idempotency_key=uuid1(),  # TODO
+        idempotency_key=headers.idempotency_key,
     )
     session.add(payment)
     await session.flush()
