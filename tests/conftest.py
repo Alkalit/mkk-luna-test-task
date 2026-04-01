@@ -6,6 +6,7 @@ import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
+from mkk.infrastructure.database import setup_engine, setup_session, session_manager
 
 from mkk.presentation.web_api.payments import payment_router
 
@@ -22,6 +23,12 @@ def event_loop() -> Iterator[asyncio.AbstractEventLoop]:
 def app() -> FastAPI:
     test_app = FastAPI()
     test_app.include_router(payment_router)
+
+    engine = setup_engine()
+    session_factory = setup_session(engine)
+
+    # Dependency injection.
+    test_app.dependency_overrides[AsyncSession] = session_manager(session_factory)
     return test_app
 
 
