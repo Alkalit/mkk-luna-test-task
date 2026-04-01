@@ -1,9 +1,11 @@
 import asyncio
+from typing import Iterator
 
 import pytest
-from typing import Iterator
+import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
 from mkk.presentation.web_api.payments import payment_router
 
@@ -27,3 +29,21 @@ def app() -> FastAPI:
 def client(app) -> TestClient:
     test_client = TestClient(app)
     return test_client
+
+
+@pytest_asyncio.fixture(scope='session')
+async def engine() -> AsyncEngine:
+    engine = create_async_engine(
+        "postgresql+psycopg://mkk:mkk@postgresql/mkk",
+    )
+    return engine
+
+
+@pytest_asyncio.fixture(scope="function")
+async def session(engine: AsyncEngine) -> AsyncSession:
+    async with engine.connect() as connection:
+        async with connection.begin():
+            session_factory = async_sessionmaker()
+            session = session_factory(bind=connection, join_transaction_mode="create_savepoint")
+            yield session
+            await session.close()

@@ -56,10 +56,10 @@ services:
     ports:
       - "8000:8000"
 
-  test:
+  tests:
     <<: *base
     container_name: mkk_test
-    command: ["pytest", "tests"]
+    command: ["pytest", "-s", "tests"]
 
   migrations:
     <<: *base

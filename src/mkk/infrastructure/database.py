@@ -2,8 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 def setup_engine() -> AsyncEngine:
     engine = create_async_engine(
-        "postgresql+psycopg://mkk:mkk@postgresql:6543/mkk",
-        connect_args=dict(check_same_thread=False),
+        "postgresql+psycopg://mkk:mkk@postgresql/mkk",
     )
     return engine
 
