@@ -1,23 +1,13 @@
-from typing import Annotated
-from decimal import Decimal
-from pydantic import BaseModel, Field, Json, WebsocketUrl, JsonValue
 from datetime import datetime as dt
 from uuid import uuid1
 
-from fastapi import APIRouter, Response, status, Depends, Body
+from fastapi import APIRouter, Response, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mkk.adapters.database.models import Payment, Currency, Status
+from mkk.adapters.database.models import Payment, Status
+from mkk.presentation.web_api.models import PaymentCreation
 
 payment_router = APIRouter()
-
-
-class PaymentCreation(BaseModel):
-    amount: Decimal
-    currency: Currency
-    description: str = 'Test descr'
-    meta: JsonValue
-    url: WebsocketUrl
 
 
 @payment_router.post("/api/v1/payments")
@@ -34,7 +24,7 @@ async def payments(
         currency=payment_data.currency,
         description=payment_data.description,
         status=Status.PENDING,
-        url=str(payment_data.url), # NOQA
+        url=str(payment_data.url),
         meta=payment_data.meta,
         created_at=created_at,
         idempotency_key=uuid1(),  # TODO
