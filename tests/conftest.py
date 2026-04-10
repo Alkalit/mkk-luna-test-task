@@ -5,9 +5,13 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from faststream import FastStream
+from faststream.rabbit import RabbitBroker
+from faststream.security import SASLPlaintext
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
-from mkk.infrastructure.database import setup_engine, setup_session, session_manager
 
+from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
+from mkk.presentation.amqp import router
 from mkk.presentation.web_api.payments import payment_router
 
 
@@ -54,3 +58,25 @@ async def session(engine: AsyncEngine) -> AsyncSession:
             session = session_factory(bind=connection, join_transaction_mode="create_savepoint")
             yield session
             await session.close()
+
+
+@pytest.fixture(scope='session')
+def broker() -> RabbitBroker:
+    broker = RabbitBroker(
+        host="rabbitmq",
+        port=5672,
+        security=SASLPlaintext(
+            username="rabbit",
+            password="rabbit123",
+        ),
+
+        virtualhost="/",
+    )
+    broker.include_router(router)
+    return broker
+
+
+@pytest.fixture(scope='session')
+async def amqp_app(broker: RabbitBroker) -> FastStream:
+    app = FastStream(broker)
+    return app

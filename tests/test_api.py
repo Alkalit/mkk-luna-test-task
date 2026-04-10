@@ -42,3 +42,6 @@ class TestPaymentsCreation:
         assert payment.url == 'wss://domain/do-stuff'
         assert bool(payment.created_at)
         assert payment.processed_at is None
+
+    async def test_check_message_sending(self, client: TestClient, session: AsyncSession):
+        pass

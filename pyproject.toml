@@ -11,16 +11,18 @@ version = "1.0"
 description = "Test task for MKK Luna"
 requires-python = ">=3.14"
 dependencies = [
-    "pydantic==2.12.*",
-    "fastapi==0.135.*",
-    "fastapi-cli==0.0.24",
-    "psycopg[binary]==3.3.3",
-    "SQLAlchemy==2.0.*",
     "alembic==1.18.*",
-    "httpx==0.28.1",
+    "pydantic==2.12.*",
+    "fastapi==0.119.1",
+    "fastapi-cli==0.0.24",
+    "uvicorn==0.37.0",
+    "psycopg[binary]==3.3.3",
+    "SQLAlchemy[asyncio]==2.0.*",
+    "faststream[cli, rabbit]==0.6.7",
 ]
 [project.optional-dependencies]
 test = [
     "pytest==9.0.2",
     "pytest-asyncio==1.3.0",
+    "httpx==0.28.1",
 ]

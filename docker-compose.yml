@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: mkk
       POSTGRES_DB: mkk
     ports:
-      - "5432:5432"
+      - "6543:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -51,8 +51,7 @@ services:
   app:
     <<: *base
     container_name: mkk
-    restart: unless-stopped
-    command: ["fastapi", "run", "src/mkk/main.py"]
+    command: ["fastapi", "dev", "--reload", "src/mkk/main.py"]
     ports:
       - "8000:8000"
 
