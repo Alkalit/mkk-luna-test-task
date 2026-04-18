@@ -1,17 +1,15 @@
 services:
   rabbitmq:
-    image: rabbitmq:4.2
+    image: rabbitmq:4.2-management
     container_name: rabbitmq
     restart: unless-stopped
     ports:
       - "5672:5672" # AMQP
       - "15672:15672" # UI
-    environment:
-      RABBITMQ_DEFAULT_USER: rabbit
-      RABBITMQ_DEFAULT_PASS: rabbit123
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./docker/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "status" ]
       interval: 10s

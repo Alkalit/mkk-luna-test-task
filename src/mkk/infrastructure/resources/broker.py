@@ -8,7 +8,7 @@ def new_broker() -> RabbitBroker:
         host="rabbitmq",
         port=5672,
         security=SASLPlaintext(
-            username="rabbit",
+            username="luna",
             password="rabbit123",
         ),
 

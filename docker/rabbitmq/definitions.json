@@ -1,0 +1,36 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+
+  "users": [
+    {
+      "name": "luna",
+      "password_hash": "f01We2Pp2EK3DkfzAHBUqEH9dSX3/T5FQQhpAzex/33F9Vn9",
+      "tags": [
+        "administrator"
+      ]
+    }
+  ],
+  "permissions": [
+    {
+      "user": "luna",
+      "vhost": "/",
+      "configure": ".*",
+      "read": ".*",
+      "write": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "payments.new",
+      "vhost": "/",
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum"
+      }
+    }
+  ]
+}
