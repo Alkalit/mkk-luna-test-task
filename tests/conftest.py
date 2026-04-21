@@ -6,7 +6,7 @@ import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from faststream import FastStream
-from faststream.rabbit import RabbitBroker
+from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
 from faststream.security import SASLPlaintext
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
@@ -61,17 +61,29 @@ async def session(engine: AsyncEngine) -> AsyncSession:
 
 
 @pytest.fixture(scope='session')
-def broker() -> RabbitBroker:
+def queue() -> RabbitQueue:
+    queue = RabbitQueue(
+        'payments.new',
+        queue_type=QueueType.QUORUM,
+        durable=True,
+    )
+
+    return queue
+
+
+@pytest.fixture(scope='session')
+def broker(queue) -> RabbitBroker:
+
     broker = RabbitBroker(
         host="rabbitmq",
         port=5672,
         security=SASLPlaintext(
-            username="rabbit",
+            username="luna",
             password="rabbit123",
         ),
-
         virtualhost="/",
     )
+    broker.declare_queue(queue)
     broker.include_router(router)
     return broker
 
