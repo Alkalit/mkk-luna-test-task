@@ -1,3 +1,4 @@
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
@@ -22,17 +23,20 @@ class TestPaymentsCreation:
                 meta=dict(spam=1, ham=2, eggs=3),
                 url='https://domain/do-stuff',
             ),
-            headers={"Idempotency-Key": "deadbeef-2e15-11f1-b0bb-02420a0a0102"}
+            headers={
+                "Idempotency-Key": str(uuid.uuid1()),
+            }
         )
 
-        payment_id = response.json()["payment_id"]
+        data = response.json()
+        # print(data['detail'][0])
 
         assert response.status_code == 202
-        assert bool(payment_id)
+        assert bool(data['payment_id'])
         assert response.json()["status"] == Status.PENDING
         assert bool(response.json()["created_at"])
 
-        expression = select(Payment).filter_by(id=payment_id)
+        expression = select(Payment).filter_by(id=data['payment_id'])
         payment: Payment = (await session.scalars(expression)).one()
 
         assert payment.amount == Decimal("500.35")
