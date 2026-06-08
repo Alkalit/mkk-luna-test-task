@@ -20,7 +20,7 @@ class TestPaymentsCreation:
                 currency=Currency.EUR,
                 description='Test desc',
                 meta=dict(spam=1, ham=2, eggs=3),
-                url='wss://domain/do-stuff',
+                url='https://domain/do-stuff',
             ),
             headers={"Idempotency-Key": "deadbeef-2e15-11f1-b0bb-02420a0a0102"}
         )
@@ -39,9 +39,10 @@ class TestPaymentsCreation:
         assert payment.currency == Currency.EUR
         assert payment.description == 'Test desc'
         assert payment.meta == dict(spam=1, ham=2, eggs=3)
-        assert payment.url == 'wss://domain/do-stuff'
+        assert payment.url == 'https://domain/do-stuff'
         assert bool(payment.created_at)
         assert payment.processed_at is None
 
     async def test_check_message_sending(self, client: TestClient, session: AsyncSession):
         pass
+        '{"amount":"500.35","currency":"EUR","description":"Test desc","meta":{"spam":1,"ham":2,"eggs":3},"url":"https://domain/do-stuff"}'

@@ -18,7 +18,7 @@ class TestStatusChecker:
                         queue,
                         ):
         async with TestRabbitBroker(broker, with_real=True) as test_broker:
-            payment = Payment(  # dataclass
+            payment = Payment(
                 id=10,
                 amount=Decimal('100'),
                 currency=Currency.EUR,
