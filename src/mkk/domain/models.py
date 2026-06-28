@@ -18,7 +18,7 @@ class Status(StrEnum):
 
 
 # JSON can be not only a js-object, but also an array and etc
-#  but here we simplify
+#  but we simplify
 class JSON(dict):
     pass
 
@@ -31,7 +31,7 @@ class Payment:
     description: str
     status: Status
     idempotency_key: UUID
-    url: str
+    webhook_url: str
     meta: JSON
     created_at: datetime
     processed_at: datetime

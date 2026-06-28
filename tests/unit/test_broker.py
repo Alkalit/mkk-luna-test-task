@@ -24,7 +24,7 @@ class TestStatusChecker:
                 currency=Currency.EUR,
                 description='test description',
                 status=Status.PENDING,
-                url='wss://domain.com/websocket-handler/',
+                webhook_url='wss://domain.com/websocket-handler/',
                 meta={},
                 created_at=dt.now(),
                 processed_at=dt.now(),

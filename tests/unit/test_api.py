@@ -29,7 +29,6 @@ class TestPaymentsCreation:
         )
 
         data = response.json()
-        # print(data['detail'][0])
 
         assert response.status_code == 202
         assert bool(data['payment_id'])
