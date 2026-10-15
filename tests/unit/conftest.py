@@ -1,4 +1,7 @@
 import asyncio
+import uuid
+from datetime import datetime as dt
+from decimal import Decimal
 from typing import Iterator
 
 import pytest
@@ -10,6 +13,7 @@ from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
 from faststream.security import SASLPlaintext
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
+from mkk.domain.models import Payment, Currency, Status
 from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
 from mkk.presentation.amqp import router
 from mkk.presentation.web_api.payments import payment_router
@@ -73,7 +77,6 @@ def queue() -> RabbitQueue:
 
 @pytest.fixture(scope='session')
 def broker(queue) -> RabbitBroker:
-
     broker = RabbitBroker(
         host="rabbitmq",
         port=5672,
@@ -92,3 +95,19 @@ def broker(queue) -> RabbitBroker:
 async def amqp_app(broker: RabbitBroker) -> FastStream:
     app = FastStream(broker)
     return app
+
+
+@pytest.fixture()
+def default_payment() -> Payment:
+    return Payment(
+        id=1,
+        amount=Decimal(100),
+        currency=Currency.RUB,
+        description='test descr',
+        status=Status.PENDING,
+        idempotency_key=uuid.MAX,
+        webhook_url='https://domain.com',
+        meta={},
+        created_at=dt.now(),
+        processed_at=dt.now(),
+    )
