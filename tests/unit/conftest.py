@@ -107,7 +107,7 @@ def default_payment() -> Payment:
         status=Status.PENDING,
         idempotency_key=uuid.MAX,
         webhook_url='https://domain.com',
-        meta={},
+        meta='{}',
         created_at=dt.now(),
         processed_at=dt.now(),
     )
