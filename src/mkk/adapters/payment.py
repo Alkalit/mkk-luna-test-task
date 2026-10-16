@@ -1,7 +1,8 @@
 __all__ = ['AbstractPaymentClient', 'PaymentClient']
 
-from abc import ABC
 import random
+from abc import ABC
+
 from mkk.domain.models import Payment
 
 
@@ -16,7 +17,7 @@ class AbstractPaymentClient(ABC):
 
 class PaymentClient(AbstractPaymentClient):
     """
-    Эмулирует обработку платежа (2-5 сек, 90% успех, 10% ошибка)
+    Pretends payment processing. Succeeds in 90% cases.
     """
 
     def do_processing(self, payment: Payment) -> bool:
