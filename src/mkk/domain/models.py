@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, Json, Field, PositiveInt
+from pydantic import BaseModel, Field, PositiveInt
 
 
 class Currency(StrEnum):
@@ -32,6 +32,6 @@ class Payment(BaseModel):
     status: Status
     idempotency_key: UUID
     webhook_url: str
-    meta: Json[dict]
+    meta: dict
     created_at: datetime
-    processed_at: datetime
+    processed_at: datetime | None
