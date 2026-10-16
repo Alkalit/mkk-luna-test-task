@@ -24,7 +24,7 @@ async def payments(
         currency=payment_data.currency,
         description=payment_data.description,
         status=Status.PENDING,
-        url=str(payment_data.url),
+        webhook_url=str(payment_data.url),
         meta=payment_data.meta,
         created_at=created_at,
         idempotency_key=headers.idempotency_key,
@@ -39,8 +39,3 @@ async def payments(
 
     await session.commit()
     return data
-
-
-@payment_router.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
