@@ -4,7 +4,8 @@ from fastapi import APIRouter, Response, status, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mkk.adapters.database.models import Payment, Status
-from mkk.presentation.web_api.models import PaymentCreation, PaymentCreationHeader
+from mkk.presentation.web_api.models import PaymentCreation, PaymentCreationHeaders
+from mkk.presentation.web_api.models import PaymentCreationInfo
 
 payment_router = APIRouter()
 
@@ -13,12 +14,11 @@ payment_router = APIRouter()
 async def payments(
         response: Response,
         payment_data: PaymentCreation,
+        headers: PaymentCreationHeaders = Header(),
         session: AsyncSession = Depends(),
-        headers: PaymentCreationHeader = Header(),
-):
+) -> PaymentCreationInfo:
 
     response.status_code = status.HTTP_202_ACCEPTED
-    created_at = dt.now()
     payment = Payment(
         amount=payment_data.amount,
         currency=payment_data.currency,
@@ -26,16 +26,17 @@ async def payments(
         status=Status.PENDING,
         webhook_url=str(payment_data.url),
         meta=payment_data.meta,
-        created_at=created_at,
+        created_at=dt.now(),
         idempotency_key=headers.idempotency_key,
     )
     session.add(payment)
     await session.flush()
-    data = {
-        "payment_id": payment.id,
-        "status": payment.status,
-        "created_at": created_at,
-    }
+
+    data = PaymentCreationInfo(
+        payment_id=payment.id,
+        status=payment.status,
+        created_at=payment.created_at,
+    )
 
     await session.commit()
     return data

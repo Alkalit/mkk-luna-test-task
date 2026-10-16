@@ -25,7 +25,7 @@ class TestStatusChecker:
                 description='test description',
                 status=Status.PENDING,
                 webhook_url='wss://domain.com/websocket-handler/',
-                meta={},
+                meta='{}',
                 created_at=dt.now(),
                 processed_at=dt.now(),
                 idempotency_key=uuid8(),

@@ -42,7 +42,7 @@ class TestPaymentsCreation:
         assert payment.currency == Currency.EUR
         assert payment.description == 'Test desc'
         assert payment.meta == dict(spam=1, ham=2, eggs=3)
-        assert payment.url == 'https://domain/do-stuff'
+        assert payment.webhook_url == 'https://domain/do-stuff'
         assert bool(payment.created_at)
         assert payment.processed_at is None
 
