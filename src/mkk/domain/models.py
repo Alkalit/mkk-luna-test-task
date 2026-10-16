@@ -34,4 +34,4 @@ class Payment(BaseModel):
     webhook_url: str
     meta: dict
     created_at: datetime
-    processed_at: datetime | None
+    processed_at: datetime | None = None
