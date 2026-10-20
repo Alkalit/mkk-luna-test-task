@@ -21,7 +21,7 @@ class Status(StrEnum):
 
 
 class Payment(BaseModel):
-    id: PositiveInt
+    id: PositiveInt | None = None
     amount: Decimal = Field(
         gt=0,
         max_digits=15,

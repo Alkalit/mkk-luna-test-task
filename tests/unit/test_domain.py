@@ -24,7 +24,6 @@ def test_simple_creation():
     )
 
 
-
 def test_cannot_create_a_negative_payments():
     with pytest.raises(ValidationError):
         Payment(

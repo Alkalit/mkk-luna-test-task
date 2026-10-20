@@ -49,18 +49,20 @@ class TestPaymentProcessingConsumer:
                                       session,
                                       succeeding_client,
                                       http_client,
+                                      pending_payment_db_model,
                                       ):
-        payment_id = 1
+
+        id = pending_payment_db_model.id
 
         await payment_processing(
-            payment_id,
+            pending_payment_db_model.id,
             session,
             succeeding_client,
             http_client,
             # todo broker client
         )
 
-        expression = select(PaymentDB).filter_by(id=payment_id)
+        expression = select(PaymentDB).filter_by(id=id)
         payment: PaymentDB = (await session.scalars(expression)).one()
 
         assert payment.status == Status.SUCCEEDED
@@ -70,18 +72,20 @@ class TestPaymentProcessingConsumer:
                                   session,
                                   failing_client,
                                   http_client,
+                                  pending_payment_db_model,
                                   ):
-        payment_id = 1
+
+        id = pending_payment_db_model.id
 
         await payment_processing(
-            payment_id,
+            pending_payment_db_model.id,
             session,
             failing_client,
             http_client,
             # todo broker client
         )
 
-        expression = select(PaymentDB).filter_by(id=payment_id)
+        expression = select(PaymentDB).filter_by(id=id)
         payment: PaymentDB = (await session.scalars(expression)).one()
 
         assert payment.status == Status.FAILED

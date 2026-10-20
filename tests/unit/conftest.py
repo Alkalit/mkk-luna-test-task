@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import datetime as dt
 from decimal import Decimal
 from typing import Iterator
@@ -13,10 +15,14 @@ from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
 from faststream.security import SASLPlaintext
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
+from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.domain.models import Payment, Currency, Status
 from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
 from mkk.presentation.amqp import router
 from mkk.presentation.web_api.payments import payment_router
+
+logging.basicConfig()
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
@@ -55,7 +61,7 @@ async def engine() -> AsyncEngine:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def session(engine: AsyncEngine) -> AsyncSession:
+async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     async with engine.connect() as connection:
         async with connection.begin():
             session_factory = async_sessionmaker()
@@ -98,16 +104,35 @@ async def amqp_app(broker: RabbitBroker) -> FastStream:
 
 
 @pytest.fixture()
-def default_payment() -> Payment:
+def pending_payment() -> Payment:
     return Payment(
-        id=1,
         amount=Decimal(100),
         currency=Currency.RUB,
         description='test descr',
         status=Status.PENDING,
         idempotency_key=uuid.MAX,
         webhook_url='https://domain.com',
-        meta='{}',
+        meta={},
         created_at=dt.now(),
-        processed_at=dt.now(),
     )
+
+
+@pytest_asyncio.fixture()
+async def pending_payment_db_model(
+        session: AsyncSession,
+        pending_payment: Payment,
+) -> PaymentDBModel:
+    model = PaymentDBModel(
+        amount=pending_payment.amount,
+        currency=pending_payment.currency,
+        description=pending_payment.description,
+        status=pending_payment.status,
+        idempotency_key=pending_payment.idempotency_key,
+        webhook_url=pending_payment.webhook_url,
+        meta=pending_payment.meta,
+        created_at=pending_payment.created_at,
+    )
+
+    session.add(model)
+    await session.flush()
+    return model
