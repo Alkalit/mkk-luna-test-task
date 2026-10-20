@@ -1,8 +1,7 @@
-from collections.abc import Generator
-
-import httpx
 import pytest
 from sqlalchemy import select
+
+from httpx import HTTPError
 
 from mkk.adapters.database.models import Payment as PaymentDB
 from mkk.adapters.payment import AbstractPaymentClient
@@ -32,33 +31,24 @@ def failing_client() -> FailingPaymentClient:
     return FailingPaymentClient()
 
 
-@pytest.fixture()
-def http_client() -> Generator[httpx.Client]:
-    with httpx.Client() as client:
-        yield client
-
-
 # Test:
-# successful payment
-# failed payment
-# web hook notification if any
+# retry logic on both payment and webhook fail
 class TestPaymentProcessingConsumer:
 
     @pytest.mark.asyncio
     async def test_successful_payment(self,
                                       session,
                                       succeeding_client,
-                                      http_client,
+                                      http_200,
                                       pending_payment_db_model,
                                       ):
-
         id = pending_payment_db_model.id
 
         await payment_processing(
             pending_payment_db_model.id,
             session,
             succeeding_client,
-            http_client,
+            http_200,
             # todo broker client
         )
 
@@ -71,17 +61,16 @@ class TestPaymentProcessingConsumer:
     async def test_failed_payment(self,
                                   session,
                                   failing_client,
-                                  http_client,
+                                  http_200,
                                   pending_payment_db_model,
                                   ):
-
         id = pending_payment_db_model.id
 
         await payment_processing(
             pending_payment_db_model.id,
             session,
             failing_client,
-            http_client,
+            http_200,
             # todo broker client
         )
 
@@ -89,3 +78,37 @@ class TestPaymentProcessingConsumer:
         payment: PaymentDB = (await session.scalars(expression)).one()
 
         assert payment.status == Status.FAILED
+
+    @pytest.mark.asyncio
+    async def test_webhook_response_error(self,
+                                          session,
+                                          succeeding_client,
+                                          http_500,
+                                          pending_payment_db_model,
+                                          ):
+
+        # should not raise
+        await payment_processing(
+            pending_payment_db_model.id,
+            session,
+            succeeding_client,
+            http_500,
+            # todo broker client
+        )
+
+    @pytest.mark.asyncio
+    async def test_webhook_calling_error(self,
+                                         session,
+                                         succeeding_client,
+                                         http_exception,
+                                         pending_payment_db_model,
+                                         ):
+
+        with pytest.raises(HTTPError):
+            await payment_processing(
+                pending_payment_db_model.id,
+                session,
+                succeeding_client,
+                http_exception,
+                # todo broker client
+            )

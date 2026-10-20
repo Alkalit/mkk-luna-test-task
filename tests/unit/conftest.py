@@ -6,6 +6,7 @@ from datetime import datetime as dt
 from decimal import Decimal
 from typing import Iterator
 
+import httpx
 import pytest
 import pytest_asyncio
 from fastapi import FastAPI
@@ -111,7 +112,7 @@ def pending_payment() -> Payment:
         description='test descr',
         status=Status.PENDING,
         idempotency_key=uuid.MAX,
-        webhook_url='https://domain.com',
+        webhook_url='https://www.example.org/',
         meta={},
         created_at=dt.now(),
     )
@@ -136,3 +137,34 @@ async def pending_payment_db_model(
     session.add(model)
     await session.flush()
     return model
+
+
+@pytest_asyncio.fixture()
+async def http_200() -> AsyncGenerator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, content='Well done')
+        )
+    ) as client:
+        yield client
+
+
+@pytest_asyncio.fixture()
+async def http_500() -> AsyncGenerator[httpx.AsyncClient]:
+    async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(500, content='Shit happend')
+            )
+    ) as client:
+        yield client
+
+
+@pytest_asyncio.fixture()
+async def http_exception() -> AsyncGenerator[httpx.AsyncClient]:
+    def handler(request: httpx.Request):
+        raise httpx.HTTPError('The speed of light has been exceeded!')
+
+    async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+    ) as client:
+        yield client

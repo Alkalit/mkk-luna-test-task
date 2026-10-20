@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient
 
 from mkk.domain.models import Payment, Status
 from mkk.adapters.database.models import Payment as PaymentDBModel
@@ -10,10 +11,11 @@ async def payment_processing(
         payment_id: int,
         session: AsyncSession,
         payment_client: AbstractPaymentClient,
-        http_client,
+        http_client: AsyncClient,
 ):
     expression = select(PaymentDBModel).filter_by(id=payment_id)
     payment: PaymentDBModel = (await session.scalars(expression)).one()
+    webhook_url = payment.webhook_url
 
     success = payment_client.do_process(Payment(
         id=payment.id,
@@ -31,3 +33,5 @@ async def payment_processing(
     session.add(payment)
     await session.flush()
     await session.commit()
+
+    await http_client.get(webhook_url)

@@ -53,11 +53,6 @@ services:
     ports:
       - "8000:8000"
 
-  tests:
-    <<: *base
-    container_name: mkk_test
-    command: ["pytest", "-s", "tests"]
-
   migrations:
     <<: *base
     container_name: mkk_migrations
