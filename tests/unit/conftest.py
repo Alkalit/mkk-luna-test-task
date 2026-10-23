@@ -1,10 +1,8 @@
-import asyncio
-import logging
+import logging.config
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime as dt
 from decimal import Decimal
-from typing import Iterator
 
 import httpx
 import pytest
@@ -13,29 +11,62 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from faststream import FastStream
 from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
-from faststream.security import SASLPlaintext
+from faststream.rabbit.publisher.usecase import RabbitPublisher
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
 from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.domain.models import Payment, Currency, Status
 from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
-from mkk.presentation.amqp import router
 from mkk.presentation.web_api.payments import payment_router
 
-logging.basicConfig()
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {taskName} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+
+    "loggers": {
+
+        "": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+}
+
+logging.config.dictConfig(LOGGING)
+logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Iterator[asyncio.AbstractEventLoop]:
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture(scope='session')
+async def broker() -> AsyncGenerator[RabbitBroker]:
+    async with RabbitBroker("amqp://luna:rabbit123@rabbitmq:5672/") as broker:
+        yield broker
 
 
 @pytest.fixture(scope='session')
-def app() -> FastAPI:
+def faststream_app(broker):
+    return FastStream(broker)
+
+
+@pytest.fixture(scope='session')
+def app(broker) -> FastAPI:
     test_app = FastAPI()
     test_app.include_router(payment_router)
 
@@ -44,6 +75,7 @@ def app() -> FastAPI:
 
     # Dependency injection.
     test_app.dependency_overrides[AsyncSession] = session_manager(session_factory)
+    test_app.dependency_overrides[RabbitPublisher] = lambda: broker.publisher("payments.new")
     return test_app
 
 
@@ -80,28 +112,6 @@ def queue() -> RabbitQueue:
     )
 
     return queue
-
-
-@pytest.fixture(scope='session')
-def broker(queue) -> RabbitBroker:
-    broker = RabbitBroker(
-        host="rabbitmq",
-        port=5672,
-        security=SASLPlaintext(
-            username="luna",
-            password="rabbit123",
-        ),
-        virtualhost="/",
-    )
-    broker.declare_queue(queue)
-    broker.include_router(router)
-    return broker
-
-
-@pytest.fixture(scope='session')
-async def amqp_app(broker: RabbitBroker) -> FastStream:
-    app = FastStream(broker)
-    return app
 
 
 @pytest.fixture()
@@ -142,9 +152,9 @@ async def pending_payment_db_model(
 @pytest_asyncio.fixture()
 async def http_200() -> AsyncGenerator[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        transport=httpx.MockTransport(
-            lambda request: httpx.Response(200, content='Well done')
-        )
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, content='Well done')
+            )
     ) as client:
         yield client
 

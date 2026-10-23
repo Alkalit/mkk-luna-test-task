@@ -1,6 +1,8 @@
+import logging
 from datetime import datetime as dt
 
-from fastapi import APIRouter, Response, status, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
+from faststream.rabbit.publisher.usecase import RabbitPublisher
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,15 +13,17 @@ from mkk.presentation.web_api.models import PaymentCreation, PaymentCreationHead
 
 payment_router = APIRouter()
 
+logger = logging.getLogger(__name__)
 
-@payment_router.post("/api/v1/payments")
+
+@payment_router.post("/api/v1/payments", status_code=202)
 async def create_payment(
-        response: Response,
         payment_data: PaymentCreation,
         headers: PaymentCreationHeaders = Header(),
         session: AsyncSession = Depends(),
+        publisher: RabbitPublisher = Depends(),
 ) -> PaymentCreationInfo:
-    response.status_code = status.HTTP_202_ACCEPTED
+
     payment = PaymentDB(
         amount=payment_data.amount,
         currency=payment_data.currency,
@@ -38,6 +42,8 @@ async def create_payment(
         status=payment.status,
         created_at=payment.created_at,
     )
+
+    await publisher.publish('payment proc')
 
     await session.commit()
     return data

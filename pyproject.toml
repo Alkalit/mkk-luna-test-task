@@ -13,12 +13,12 @@ requires-python = ">=3.14"
 dependencies = [
     "alembic==1.18.*",
     "pydantic==2.12.*",
-    "fastapi==0.119.1",
+    "fastapi==0.161.0",
     "fastapi-cli==0.0.24",
     "uvicorn==0.37.0",
     "psycopg[binary]==3.3.3",
     "SQLAlchemy[asyncio]==2.0.*",
-    "faststream[cli, rabbit]==0.6.7",
+    "faststream[cli, rabbit]==0.7.7",
     "httpx==0.28.1",
 ]
 [project.optional-dependencies]
