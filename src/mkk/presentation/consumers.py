@@ -1,3 +1,5 @@
+__all__ = ['router', 'payment_processing']
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
@@ -6,7 +8,11 @@ from mkk.domain.models import Payment, Status
 from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.adapters.payment import AbstractPaymentClient
 
+from faststream.rabbit import RabbitRouter
 
+router = RabbitRouter()
+
+@router.subscriber('payments.new')
 async def payment_processing(
         payment_id: int,
         session: AsyncSession,

@@ -12,12 +12,14 @@ from fastapi.testclient import TestClient
 from faststream import FastStream
 from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
 from faststream.rabbit.publisher.usecase import RabbitPublisher
+from faststream.rabbit import TestRabbitBroker
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
 
 from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.domain.models import Payment, Currency, Status
 from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
 from mkk.presentation.web_api.payments import payment_router
+from mkk.presentation.consumers import router
 
 LOGGING = {
     "version": 1,
@@ -57,7 +59,9 @@ logger = logging.getLogger(__name__)
 @pytest_asyncio.fixture(scope='session')
 async def broker() -> AsyncGenerator[RabbitBroker]:
     async with RabbitBroker("amqp://luna:rabbit123@rabbitmq:5672/") as broker:
-        yield broker
+        broker.include_router(router)
+        async with TestRabbitBroker(broker) as test_broker:
+            yield test_broker
 
 
 @pytest.fixture(scope='session')

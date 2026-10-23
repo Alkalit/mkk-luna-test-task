@@ -43,7 +43,7 @@ async def create_payment(
         created_at=payment.created_at,
     )
 
-    await publisher.publish('payment proc')
+    await publisher.publish(payment.id, content_type='text/plain')
 
     await session.commit()
     return data
