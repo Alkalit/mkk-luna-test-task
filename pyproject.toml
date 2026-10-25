@@ -20,6 +20,8 @@ dependencies = [
     "SQLAlchemy[asyncio]==2.0.*",
     "faststream[cli, rabbit]==0.7.7",
     "httpx==0.28.1",
+    "dishka==1.10.1",
+    "dishka-faststream==0.7.0",
 ]
 [project.optional-dependencies]
 test = [

@@ -3,6 +3,7 @@ from faststream.security import SASLPlaintext
 
 from faststream.rabbit import RabbitBroker
 
+
 def new_broker() -> RabbitBroker:
     return RabbitBroker(
         host="rabbitmq",
@@ -11,6 +12,5 @@ def new_broker() -> RabbitBroker:
             username="luna",
             password="rabbit123",
         ),
-
         virtualhost="/",
     )

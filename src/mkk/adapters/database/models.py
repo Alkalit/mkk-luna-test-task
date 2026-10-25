@@ -13,9 +13,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(
-        Numeric,
-        CheckConstraint("currency > 0", name="positive_only"),
-        nullable=False
+        Numeric, CheckConstraint("currency > 0", name="positive_only"), nullable=False
     )
     currency = Column("currency", Enum(Currency), nullable=False)
     description = Column(String, nullable=False)

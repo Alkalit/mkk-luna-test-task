@@ -3,7 +3,11 @@ from faststream import FastStream
 from faststream.rabbit import RabbitBroker, RabbitPublisher
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mkk.infrastructure.resources.database import setup_engine, setup_session, session_manager
+from mkk.infrastructure.resources.database import (
+    setup_engine,
+    setup_session,
+    session_manager,
+)
 from mkk.presentation.amqp import router
 from mkk.presentation.web_api.payments import payment_router
 
