@@ -1,4 +1,5 @@
-from typing import Callable, AsyncGenerator
+from contextlib import asynccontextmanager
+from typing import Callable, AsyncIterator
 
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -20,12 +21,12 @@ def setup_session(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return session_factory
 
 
-def session_manager(
-    session_factory: Callable[[], AsyncSession],
-) -> Callable[[], AsyncGenerator[AsyncSession, None]]:
-    async def wrapper() -> AsyncGenerator[AsyncSession, None]:
-        session = session_factory()
+@asynccontextmanager
+async def session_manager(
+        session_factory: Callable[[], AsyncSession],
+) -> AsyncIterator[AsyncSession]:
+    session = session_factory()
+    try:
         yield session
+    finally:
         await session.close()
-
-    return wrapper

@@ -1,6 +1,6 @@
 import logging
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import datetime as dt
 from decimal import Decimal
 
@@ -13,24 +13,22 @@ from dishka.integrations.fastapi import FastapiProvider, setup_dishka
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from faststream import FastStream
-from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType, TestRabbitBroker
-from faststream.rabbit.publisher.usecase import RabbitPublisher
+from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType, TestRabbitBroker, RabbitPublisher
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
     AsyncSession,
-    async_sessionmaker,
+    AsyncEngine,
 )
 
 from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.adapters.payment import AbstractPaymentClient, PaymentClient
 from mkk.domain.models import Payment, Currency, Status
+from mkk.infrastructure.frameworks import create_app
 from mkk.infrastructure.logging import setup_logging
 from mkk.infrastructure.resources.database import (
     setup_engine,
     setup_session,
     session_manager,
 )
-from mkk.presentation.web_api.payments import router
 from mkk.presentation.consumers import amqp_router
 
 logger = logging.getLogger(__name__)
@@ -39,16 +37,14 @@ logger = logging.getLogger(__name__)
 class TestProvider(Provider):
 
     @provide(scope=Scope.APP)
-    async def session(self) -> AsyncIterator[AsyncSession]:
-        engine = create_async_engine(
-            "postgresql+psycopg://mkk:mkk@postgresql/mkk",
-        )
-        session_factory = async_sessionmaker(
-            autocommit=False, autoflush=False, bind=engine
-        )
-        session = session_factory()
-        yield session
-        await session.close()
+    def engine(self) -> AsyncEngine:
+        return setup_engine()
+
+    @provide(scope=Scope.APP)
+    async def session(self, engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
+        factory = setup_session(engine)
+        async with session_manager(factory) as _session:
+            yield _session
 
     @provide(scope=Scope.APP)
     def payment_client(self) -> AbstractPaymentClient:
@@ -63,30 +59,39 @@ class TestProvider(Provider):
     async def broker(self) -> AsyncIterator[RabbitBroker]:
         async with RabbitBroker(url="amqp://luna:rabbit123@rabbitmq:5672/") as _broker:
             _broker.include_router(amqp_router)
-            async with TestRabbitBroker(_broker, with_real=True) as test_broker:
+            async with TestRabbitBroker(_broker) as test_broker:
                 yield test_broker
 
+    @provide(scope=Scope.REQUEST)
+    def publisher(self, broker: RabbitBroker) -> RabbitPublisher:
+        _publisher = broker.publish()
 
-@pytest_asyncio.fixture(scope='session')
-async def container() -> AsyncIterator[AsyncContainer]:
-    yield make_async_container(TestProvider(), FastapiProvider())
-    return
+        queue = RabbitQueue(
+            "payments.new",
+            queue_type=QueueType.QUORUM,
+            durable=True,
+        )
+        return broker.publisher(queue)
+
+
+@pytest.fixture(scope='session')
+def container() -> Iterator[AsyncContainer]:
+    _container = make_async_container(TestProvider(), FastapiProvider())
+    yield _container
+    _container.close()
 
 
 @pytest_asyncio.fixture(scope="session")
-async def app(queue, container) -> AsyncIterator[FastAPI]:
+async def app(container) -> AsyncIterator[FastAPI]:
     setup_logging()
 
+    _app = create_app()
+    setup_dishka(container, _app)
 
-    broker = await container.get(RabbitBroker)
-    faststream_integration.setup_dishka(container, app=FastStream(broker))
+    faststream_integration.setup_dishka(container, app=FastStream(await container.get(RabbitBroker)))
 
-    test_app = FastAPI()
-    test_app.include_router(router)
-    setup_dishka(container, test_app)
+    yield _app
 
-    yield test_app
-    await container.close()
 
 @pytest_asyncio.fixture(scope='session')
 async def session(container: AsyncContainer) -> AsyncIterator[AsyncSession]:
@@ -99,17 +104,6 @@ async def session(container: AsyncContainer) -> AsyncIterator[AsyncSession]:
 def client(app) -> TestClient:
     test_client = TestClient(app)
     return test_client
-
-
-@pytest.fixture(scope="session")
-def queue() -> RabbitQueue:
-    queue = RabbitQueue(
-        "payments.new",
-        queue_type=QueueType.QUORUM,
-        durable=True,
-    )
-
-    return queue
 
 
 @pytest.fixture()

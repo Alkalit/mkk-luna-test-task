@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime as dt
-from typing import Any
 
+from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from faststream.rabbit.publisher.usecase import RabbitPublisher
+from faststream.rabbit import RabbitPublisher
+from faststream.rabbit import RabbitQueue, QueueType
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from dishka.integrations.fastapi import DishkaRoute, FromDishka, inject as fs_inject
 
 from mkk.adapters.database.models import Payment as PaymentDB, Status
 from mkk.domain.models import Payment
@@ -17,9 +17,7 @@ from mkk.presentation.web_api.models import (
     PaymentCreationInfo,
 )
 
-from faststream.rabbit import RabbitQueue, QueueType
-
-router = APIRouter()
+router = APIRouter(route_class=DishkaRoute)
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +29,10 @@ queue = RabbitQueue(
 
 
 @router.post("/api/v1/payments", status_code=202)
-@fs_inject
 async def create_payment(
         payment_data: PaymentCreation,
         session: FromDishka[AsyncSession],
+        publisher: FromDishka[RabbitPublisher],
         headers: PaymentCreationHeaders = Header(),
 
 ) -> PaymentCreationInfo:
@@ -57,7 +55,7 @@ async def create_payment(
         created_at=payment.created_at,
     )
 
-    # await publisher.publish(payment.id, queue=queue, content_type='text/plain')
+    await publisher.publish(payment.id, queue=queue, content_type='text/plain')
 
     await session.commit()
     return data

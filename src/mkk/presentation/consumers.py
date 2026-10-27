@@ -1,20 +1,15 @@
 __all__ = ["amqp_router", "payment_processing"]
 
+from dishka_faststream import inject as faststream_inject, FromDishka
+from faststream.rabbit import RabbitQueue, QueueType
+from faststream.rabbit import RabbitRouter
+from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from httpx import AsyncClient
 
-from faststream.rabbit import RabbitBroker, RabbitQueue, QueueType
-from mkk.domain.models import Payment, Status
 from mkk.adapters.database.models import Payment as PaymentDBModel
 from mkk.adapters.payment import AbstractPaymentClient
-from dishka_faststream import inject as faststream_inject
-
-from faststream.rabbit import RabbitRouter
-
-from dishka_faststream import (
-    FromDishka,
-)
+from mkk.domain.models import Payment, Status
 
 queue = RabbitQueue(
     "payments.new",
@@ -28,10 +23,10 @@ amqp_router = RabbitRouter()
 @amqp_router.subscriber(queue)
 @faststream_inject
 async def payment_processing(
-    payment_id: int,
-    session: FromDishka[AsyncSession],
-    payment_client: FromDishka[AbstractPaymentClient],
-    http_client: FromDishka[AsyncClient],
+        payment_id: int,
+        session: FromDishka[AsyncSession],
+        payment_client: FromDishka[AbstractPaymentClient],
+        http_client: FromDishka[AsyncClient],
 ) -> None:
     expression = select(PaymentDBModel).filter_by(id=payment_id)
     payment: PaymentDBModel = (await session.scalars(expression)).one()
