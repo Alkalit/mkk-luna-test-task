@@ -1,4 +1,4 @@
-__all__ = ['AbstractPaymentClient', 'PaymentClient']
+__all__ = ["AbstractPaymentClient", "PaymentClient"]
 
 import random
 from abc import ABC

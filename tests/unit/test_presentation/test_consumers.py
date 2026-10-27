@@ -36,12 +36,13 @@ def failing_client() -> FailingPaymentClient:
 class TestPaymentProcessingConsumer:
 
     @pytest.mark.asyncio
-    async def test_successful_payment(self,
-                                      session,
-                                      succeeding_client,
-                                      http_200,
-                                      pending_payment_db_model,
-                                      ):
+    async def test_successful_payment(
+        self,
+        session,
+        succeeding_client,
+        http_200,
+        pending_payment_db_model,
+    ):
         id = pending_payment_db_model.id
 
         await payment_processing(
@@ -58,12 +59,13 @@ class TestPaymentProcessingConsumer:
         assert payment.status == Status.SUCCEEDED
 
     @pytest.mark.asyncio
-    async def test_failed_payment(self,
-                                  session,
-                                  failing_client,
-                                  http_200,
-                                  pending_payment_db_model,
-                                  ):
+    async def test_failed_payment(
+        self,
+        session,
+        failing_client,
+        http_200,
+        pending_payment_db_model,
+    ):
         id = pending_payment_db_model.id
 
         await payment_processing(
@@ -80,12 +82,13 @@ class TestPaymentProcessingConsumer:
         assert payment.status == Status.FAILED
 
     @pytest.mark.asyncio
-    async def test_webhook_response_error(self,
-                                          session,
-                                          succeeding_client,
-                                          http_500,
-                                          pending_payment_db_model,
-                                          ):
+    async def test_webhook_response_error(
+        self,
+        session,
+        succeeding_client,
+        http_500,
+        pending_payment_db_model,
+    ):
 
         # should not raise
         await payment_processing(
@@ -97,12 +100,13 @@ class TestPaymentProcessingConsumer:
         )
 
     @pytest.mark.asyncio
-    async def test_webhook_calling_error(self,
-                                         session,
-                                         succeeding_client,
-                                         http_exception,
-                                         pending_payment_db_model,
-                                         ):
+    async def test_webhook_calling_error(
+        self,
+        session,
+        succeeding_client,
+        http_exception,
+        pending_payment_db_model,
+    ):
 
         with pytest.raises(HTTPError):
             await payment_processing(
