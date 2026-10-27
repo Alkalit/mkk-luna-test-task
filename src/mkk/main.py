@@ -1,46 +1,43 @@
+import asyncio
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+import dishka_faststream as faststream_integration
+import uvicorn
+from dishka import make_async_container
+from dishka.integrations.fastapi import FastapiProvider, setup_dishka
 from fastapi import FastAPI
 from faststream import FastStream
-from faststream.rabbit import RabbitBroker, RabbitPublisher
-from sqlalchemy.ext.asyncio import AsyncSession
+from faststream.rabbit import RabbitBroker
 
-from mkk.infrastructure.resources.database import (
-    setup_engine,
-    setup_session,
-    session_manager,
-)
-from mkk.presentation.amqp import router
-from mkk.presentation.web_api.payments import payment_router
+from mkk.infrastructure.frameworks import create_app
+from mkk.infrastructure.ioc import MainProvider
+from mkk.infrastructure.logging import setup_logging
 
 
-def create_faststream_app() -> tuple[FastStream, RabbitBroker]:
-    broker = RabbitBroker("amqp://luna:rabbit123@localhost:5672/")
-    faststream_app = FastStream(broker)
-    broker.include_router(router)
+@asynccontextmanager
+async def setup_app() -> AsyncGenerator[FastAPI, None]:
+    setup_logging()
 
-    return faststream_app, broker
+    container = make_async_container(MainProvider(), FastapiProvider())
 
+    _app = create_app()
+    setup_dishka(container, _app)
 
-def create_fastapi_app() -> FastAPI:
-    fastapi_app = FastAPI()
-    fastapi_app.include_router(payment_router)
+    faststream_integration.setup_dishka(container, app=FastStream(await container.get(RabbitBroker)))
 
-    return fastapi_app
+    yield _app
 
-
-def create_app() -> FastAPI:
-    engine = setup_engine()
-    session_factory = setup_session(engine)
-
-    faststream_app, broker = create_faststream_app()
-    fastapi_app = create_fastapi_app()
-    #
-    # fastapi_app.add_event_handler("startup", faststream_app.broker.start)
-    # fastapi_app.add_event_handler("shutdown", faststream_app.broker.close)
-
-    # Dependency injection.
-    fastapi_app.dependency_overrides[AsyncSession] = session_manager(session_factory)
-    fastapi_app.dependency_overrides[RabbitPublisher] = broker.publisher("payments.new")
-    return fastapi_app
+    await container.close()
 
 
-app = create_app()
+async def main() -> None:
+    async with setup_app() as app:
+        server = uvicorn.Server(
+            uvicorn.Config(app, host="0.0.0.0", port=8000)
+        )
+        await server.serve()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

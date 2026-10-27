@@ -74,11 +74,11 @@ class TestProvider(Provider):
         return broker.publisher(queue)
 
 
-@pytest.fixture(scope='session')
-def container() -> Iterator[AsyncContainer]:
+@pytest_asyncio.fixture(scope='session')
+async def container() -> AsyncIterator[AsyncContainer]:
     _container = make_async_container(TestProvider(), FastapiProvider())
     yield _container
-    _container.close()
+    await _container.close()
 
 
 @pytest_asyncio.fixture(scope="session")
